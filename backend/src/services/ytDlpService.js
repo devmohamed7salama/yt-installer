@@ -78,10 +78,11 @@ export async function getVideoInfo(url) {
       uploadDate: ''
     };
   } catch (error) {
-    if (error.message.includes('private') || error.message.includes('unavailable') || error.message.includes('region'))) {
+    const msg = error.message || '';
+    if (msg.includes('private') || msg.includes('unavailable') || msg.includes('region')) {
       throw new Error(error.message);
     }
-    if (error.message === 'Timeout') {
+    if (msg === 'Timeout') {
       throw new Error('Connection timeout. Try again.');
     }
     throw new Error('Could not fetch video info. Try again.');
