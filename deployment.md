@@ -157,6 +157,9 @@ Thinking: Now I need to update this with the Railway URL. But the user hasn't de
 ملاحظة: استبدل YOUR-RAILWAY-URL برابطك الفعلي من Railway.
 ---
 هل تريد أن تحاول إعادة النشر على Railway الآن؟
+
+
+
 ## الخطوة 3: نشر Frontend على Vercel
 
 ### إنشاء حساب
