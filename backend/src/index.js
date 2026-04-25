@@ -157,6 +157,9 @@ const formatArgs = getFormatArgs(format, quality);
       '--quiet',
       '--progress',
       '--no-playlist',
+      '--no-warn',
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      '--extractor-args', 'youtube:player_client=web',
       '-o', `${paths.downloads}/%(title)s.%(ext)s`,
       '-f', formatArgs,
       url
@@ -221,6 +224,9 @@ const formatArgs = getFormatArgs(format, quality);
       '--quiet',
       '--progress',
       '--yes-playlist',
+      '--no-warn',
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      '--extractor-args', 'youtube:player_client=web',
       '-o', `${paths.downloads}/%(playlist_title)s/%(title)s.%(ext)s`,
       '-f', formatArgs,
       url
