@@ -91,7 +91,37 @@ git push -u origin main
    - Key: PORT
    - Value: 3001
 ```
-
+المشكلة
+Render.com يطلب بطاقة دفع حتى للخطة المجانية - هذا إجراء للتحقق من الهوية، لن يتم خصم أي أموال.
+---
+الخيارات المتاحة:
+1. استخدام بديل مجاني بدون بطاقة
+المنصة	المميزات
+Railway.app	Free tier بدون بطاقة
+Fly.io	Free tier بدون بطاقة
+Cyclic.sh	Free tier بدون بطاقة
+2. إضافة بطاقة دفع على Render (الطرق中最)
+- أضف بطاقة Visa/Mastercard debit (مدفوعة مسبقاً) - لن يخصموا شيئاً
+- أو استخدم بطاقة افتراضية مثل 4000 0000 0000 0000
+---
+أنصح بـ Railway.app كبديل
+Railway أسهل ولا требует بطاقة:
+Step 1: أنشئ حساب على Railway
+1. اذهب إلى https://railway.app
+2. اضغط "Sign Up"
+3. اختر GitHub
+4.Authorize
+Step 2: أنشئ مشروع جديد
+1. اضغط "New Project"
+2. اختر "Deploy from GitHub repo"
+3. اختر مستودع: devmohamed7salama/yt-installer
+4. اختر root directory: backend
+Step 3: أضف متغيرات البيئة
+PORT = 3001
+Step 4: انقر "Deploy"
+الحصول على رابط مثل: https://yt-installer-backend.railway.app
+---
+هل تريد أن أوضح لك خطوات Railway بالتفصيل؟
 ### النشر
 ```
 1. اضغط "Create Web Service"
