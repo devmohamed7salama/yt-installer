@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://yt-installer-backend.onrender.com/api/$1" }
+  ]
+}

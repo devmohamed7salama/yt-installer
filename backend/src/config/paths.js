@@ -1,0 +1,23 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const ROOT_DIR = path.resolve(__dirname, '../..');
+const DOWNLOAD_DIR = path.join(ROOT_DIR, process.env.DOWNLOAD_DIR || 'downloads');
+
+if (!fs.existsSync(DOWNLOAD_DIR)) {
+  fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
+}
+
+export const paths = {
+  root: ROOT_DIR,
+  downloads: DOWNLOAD_DIR,
+};
+
+export const config = {
+  port: process.env.PORT || 3001,
+  maxConcurrentDownloads: parseInt(process.env.MAX_CONCURRENT_DOWNLOADS) || 3,
+};
