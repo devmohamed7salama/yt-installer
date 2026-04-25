@@ -17,11 +17,6 @@ export const downloadPlaylist = async (url, format, quality) => {
   return response.data;
 };
 
-export const getFiles = async () => {
-  const response = await axios.get(`${API_URL}/files`);
-  return response.data;
-};
-
 export const getQueue = async () => {
   const response = await axios.get(`${API_URL}/queue`);
   return response.data;
@@ -29,16 +24,6 @@ export const getQueue = async () => {
 
 export const cancelDownload = async (id) => {
   const response = await axios.post(`${API_URL}/cancel/${id}`);
-  return response.data;
-};
-
-export const getHistory = async () => {
-  const response = await axios.get(`${API_URL}/history`);
-  return response.data;
-};
-
-export const clearHistory = async () => {
-  const response = await axios.delete(`${API_URL}/history`);
   return response.data;
 };
 
