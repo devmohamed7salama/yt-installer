@@ -132,7 +132,31 @@ Step 4: انقر "Deploy"
 **🎉 تهانينا!** Backend活 الآن.
 
 ---
-
+الخطوات على Railway:
+1. أعد النشر
+1. اذهب إلى Railway Dashboard
+2. اضغط على مشروعك
+3. اذهب إلى "Deploy" tab
+4. اضغط "Redeploy"
+2. انتظر البناء
+- سيقوم بتنزيل Python 3 و pip و ffmpeg و yt-dlp
+- قد يستغرق 3-5 دقائق
+3. احصل على الرابط الجديد
+- الرابط سيكون: https://yt-installer-backend.railway.app
+---
+بعد النجاح:
+4. حدث vercel.json
+ارجع لملف frontend/vercel.json واستبدل الرابط:
+→ Read frontend\vercel.json 
+Thinking: Now I need to update this with the Railway URL. But the user hasn't deployed to Railway yet, so I should leave it as a placeholder and tell them to update it after they get their Railway URL.
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://YOUR-RAILWAY-URL.railway.app/api/$1" }
+  ]
+}
+ملاحظة: استبدل YOUR-RAILWAY-URL برابطك الفعلي من Railway.
+---
+هل تريد أن تحاول إعادة النشر على Railway الآن؟
 ## الخطوة 3: نشر Frontend على Vercel
 
 ### إنشاء حساب
