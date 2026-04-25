@@ -322,29 +322,33 @@ app.get('/api/files', (req, res) => {
       const items = fs.readdirSync(paths.downloads, { withFileTypes: true });
       for (const item of items) {
         const fullPath = `${paths.downloads}/${item.name}`;
-        if (item.isFile()) {
-          const stats = fs.statSync(fullPath);
-          if (!item.name.startsWith('.')) {
-            files.push({
-              name: item.name,
-              path: fullPath,
-              size: stats.size,
-              createdAt: stats.birthtime
-            });
+        try {
+          if (item.isFile()) {
+            const stats = fs.statSync(fullPath);
+            if (!item.name.startsWith('.')) {
+              files.push({
+                name: item.name,
+                path: fullPath,
+                size: stats.size,
+                createdAt: stats.birthtime
+              });
+            }
+          } else if (item.isDirectory()) {
+            const subItems = fs.readdirSync(fullPath);
+            for (const subItem of subItems) {
+              const subFullPath = `${fullPath}/${subItem}`;
+              const stats = fs.statSync(subFullPath);
+              files.push({
+                name: subItem,
+                path: subFullPath,
+                size: stats.size,
+                createdAt: stats.birthtime,
+                folder: item.name
+              });
+            }
           }
-        } else if (item.isDirectory()) {
-          const subItems = fs.readdirSync(fullPath);
-          for (const subItem of subItems) {
-            const subFullPath = `${fullPath}/${subItem}`;
-            const stats = fs.statSync(subFullPath);
-            files.push({
-              name: subItem,
-              path: subFullPath,
-              size: stats.size,
-              createdAt: stats.birthtime,
-              folder: item.name
-            });
-          }
+        } catch (err) {
+          console.error('Error reading file:', err.message);
         }
       }
     }
@@ -353,7 +357,7 @@ app.get('/api/files', (req, res) => {
     res.json({ files });
   } catch (error) {
     console.error('Files error:', error.message);
-    res.status(400).json({ error: error.message });
+    res.json({ files: [] });
   }
 });
 

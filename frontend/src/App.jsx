@@ -210,7 +210,7 @@ function App() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
+<div>
                     <label className="block text-sm font-medium mb-2">Format</label>
                     <select
                       value={format}
@@ -227,9 +227,10 @@ function App() {
                     <select
                       value={quality}
                       onChange={(e) => setQuality(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      disabled={format === 'MP3'}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 disabled:opacity-50"
                     >
-                      {analyzedData.availableQualities?.map(q => (
+                      {(format === 'MP3' ? ['Best'] : analyzedData.availableQualities)?.map(q => (
                         <option key={q} value={q}>{q}</option>
                       ))}
                     </select>
@@ -255,7 +256,7 @@ function App() {
                       <div className="flex-1">
                         <p className="font-medium truncate">{download.url}</p>
                         <p className="text-sm text-gray-500">
-                          {download.format} • {download.quality}
+                          {download.format} ï¿½ {download.quality}
                         </p>
                         {download.progress > 0 && (
                           <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
@@ -331,7 +332,7 @@ function App() {
                     <div>
                       <p className="font-medium truncate">{item.url}</p>
                       <p className="text-sm text-gray-500">
-                        {item.format} • {item.quality}
+                        {item.format} ï¿½ {item.quality}
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm ${
