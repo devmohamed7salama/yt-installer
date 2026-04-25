@@ -166,7 +166,7 @@ const formatArgs = getFormatArgs(format, quality);
       args.push('--extract-audio', '--audio-format', 'mp3');
     }
     
-    const proc = spawn('python', args, { cwd: paths.root });
+    const proc = spawn('python3', args, { cwd: paths.root });
     download.process = proc;
     
     proc.stdout.on('data', (data) => {
@@ -230,7 +230,7 @@ const formatArgs = getFormatArgs(format, quality);
       args.push('--extract-audio', '--audio-format', 'mp3');
     }
     
-    const proc = spawn('python', args, { cwd: paths.root });
+    const proc = spawn('python3', args, { cwd: paths.root });
     download.process = proc;
     
     let currentVideo = 0;

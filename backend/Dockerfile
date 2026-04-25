@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install yt-dlp --break-system-packages && \
-    ln -s /usr/local/bin/yt-dlp /usr/bin/yt-dlp
+    ln -s /usr/local/bin/yt-dlp /usr/bin/yt-dlp && \
+    ln -s /usr/bin/python3 /usr/bin/python
 
 WORKDIR /app
 

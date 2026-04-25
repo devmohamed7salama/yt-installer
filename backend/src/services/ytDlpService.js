@@ -16,7 +16,7 @@ export async function analyzeUrl(url) {
 
 export async function getVideoInfo(url) {
   try {
-    const output = execSync(`python -m yt_dlp --dump-json --no-playlist "${url}"`, {
+    const output = execSync(`python3 -m yt_dlp --dump-json --no-playlist "${url}"`, {
       encoding: 'utf-8',
       timeout: 30000
     });
@@ -46,7 +46,7 @@ export async function getVideoInfo(url) {
 
 export async function getPlaylistInfo(url) {
   try {
-    const output = execSync(`python -m yt_dlp --flat-playlist --dump-json "${url}"`, {
+    const output = execSync(`python3 -m yt_dlp --flat-playlist --dump-json "${url}"`, {
       encoding: 'utf-8',
       timeout: 30000
     });
