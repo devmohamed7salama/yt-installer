@@ -1,112 +1,132 @@
 # YT Installer
 
-A full-stack web application for downloading YouTube videos and playlists with multiple formats and quality options.
+A full-stack web application for downloading YouTube videos and playlists.
 
-## Features
+## ⚠️ Cloud Deployment Note
 
-- Download YouTube videos and playlists
-- Multiple formats: MP4, MP3, WebM
-- Multiple quality options: 144p, 360p, 720p, 1080p, Best
-- Automatic URL type detection (video vs playlist)
-- Download progress tracking
-- Download queue system
-- Download history
-- Dark mode support
+Deploying to free cloud services (Railway, Render, Vercel) is currently blocked by YouTube's rate limiting (HTTP 429). For production use, please run locally or use a VPS.
 
-## Prerequisites
+## Local Setup (Recommended)
 
-- Node.js 18+
-- yt-dlp installed on system
+### Prerequisites
 
-Install yt-dlp:
+1. **Node.js 18+**: https://nodejs.org
+2. **Python 3.8+**: https://python.org
+3. **yt-dlp**: `pip install yt-dlp`
+4. **ffmpeg**: Required for video conversion
+
+#### Install yt-dlp:
 ```bash
-# Windows (using scoop)
-scoop install yt-dlp
-
-# Windows (via pip)
+# Windows
 pip install yt-dlp
 
 # macOS
 brew install yt-dlp
 
 # Linux
-sudo apt install yt-dlp  # or your distro's package manager
+sudo apt install yt-dlp
 ```
 
-## Setup
-
-1. Navigate to the project directory:
+#### Install ffmpeg:
 ```bash
+# Windows (via scoop)
+scoop install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Linux
+sudo apt install ffmpeg
+```
+
+### Setup
+
+```bash
+# Clone the repo
+git clone https://github.com/devmohamed7salama/yt-installer.git
 cd yt-installer
-```
 
-2. Install backend dependencies:
-```bash
+# Install backend dependencies
 cd backend
 npm install
-```
 
-3. Install frontend dependencies:
-```bash
+# Install frontend dependencies
 cd ../frontend
 npm install
 ```
 
-## Running
+### Running
 
-1. Start the backend server (in one terminal):
+**Terminal 1 - Backend:**
 ```bash
 cd backend
 npm start
+# Server runs on http://localhost:3001
 ```
-Server runs on http://localhost:3001
 
-2. Start the frontend (in another terminal):
+**Terminal 2 - Frontend:**
 ```bash
 cd frontend
 npm run dev
+# App runs on http://localhost:5173
 ```
-Frontend runs on http://localhost:5173
 
-## Usage
+### Usage
 
-1. Open http://localhost:5173 in your browser
-2. Enter a YouTube video or playlist URL
-3. Click "Analyze" to get video/playlist info
-4. Select format and quality
-5. Click "Download" to start download
-6. Downloaded files appear in the "Files" tab
+1. Open http://localhost:5173
+2. Enter YouTube URL
+3. Click "Analyze"
+4. Select format (MP4/MP3) and quality
+5. Click "Download"
+
+## Cloud Deployment (Limited)
+
+For deployment on cloud services, you'll need:
+- A VPS with dedicated IP (DigitalOcean, AWS, etc.)
+- Or use a YouTube API key
+
+Railway/Render free tiers are blocked by YouTube.
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /api/analyze-url | Analyze video/playlist URL |
-| POST | /api/download-video | Start video download |
-| POST | /api/download-playlist | Start playlist download |
-| GET | /api/progress/:id | Get download progress (SSE) |
-| GET | /api/files | List downloaded files |
-| GET | /api/history | Get download history |
+| POST | /api/analyze-url | Get video info |
+| POST | /api/download-video | Start download |
+| POST | /api/download-playlist | Start playlist |
+| GET | /api/progress/:id | Progress stream |
+| GET | /api/files | List downloads |
 | POST | /api/cancel/:id | Cancel download |
 
 ## Project Structure
 
 ```
 yt-installer/
-+-- backend/
-�   +-- src/
-�   �   +-- index.js           # Express server
-�   �   +-- config/paths.js  # Path configuration
-�   �   +-- services/       # yt-dlp, queue, progress services
-�   +-- package.json
-�   +-- .env
-+-- frontend/
-    +-- src/
-    �   +-- App.jsx         # Main React component
-    �   +-- main.jsx        # React entry point
-    �   +-- components/      # UI components
-    �   +-- hooks/          # Custom React hooks
-    �   +-- services/       # API service
-    +-- package.json
-    +-- vite.config.js
+├── backend/
+│   ├── src/
+│   │   ├── index.js
+│   │   ├── config/paths.js
+│   │   └── services/
+│   ├── package.json
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── services/api.js
+│   ├── package.json
+│   └── vite.config.js
+├── README.md
+└── deployment.md
 ```
+
+## Troubleshooting
+
+### "python not found"
+Make sure Python is in your PATH. Verify with: `python --version`
+
+### "yt-dlp not found"
+Install: `pip install yt-dlp`
+
+### YouTube 429 Error
+YouTube blocks cloud IPs. Run locally for best results.
