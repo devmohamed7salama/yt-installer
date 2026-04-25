@@ -1,37 +1,6 @@
-import { spawn, execSync } from 'child_process';
-import https from 'https';
-import { URL } from 'url';
+import { execSync } from 'child_process';
 
-function fetchWithTimeout(url, timeout = 10000) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const options = {
-      hostname: parsed.hostname,
-      path: parsed.pathname + parsed.search,
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json'
-      }
-    };
-    
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-    });
-    
-    req.on('error', reject);
-    req.setTimeout(timeout, () => {
-      req.destroy();
-      reject(new Error('Timeout'));
-    });
-    
-    req.end();
-  });
-}
-
-async function getVideoId(url) {
+function getVideoId(url) {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
     /^([a-zA-Z0-9_-]{11})$/
@@ -58,34 +27,50 @@ export async function analyzeUrl(url) {
   }
 }
 
+function formatDuration(seconds) {
+  if (!seconds) return 'N/A';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 export async function getVideoInfo(url) {
   try {
-    const videoId = await getVideoId(url);
+    const videoId = getVideoId(url);
     if (!videoId) {
       throw new Error('Invalid YouTube URL');
     }
 
-    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
-    const response = await fetchWithTimeout(oembedUrl, 8000);
-    const data = JSON.parse(response);
+    const output = execSync(`python -m yt_dlp --dump-json --no-playlist "${url}"`, {
+      encoding: 'utf-8',
+      timeout: 30000,
+      maxBuffer: 10 * 1024 * 1024
+    });
     
+    const info = JSON.parse(output);
     return {
-      title: data.title,
-      duration: 'N/A',
-      thumbnail: data.thumbnail_url,
-      description: '',
-      uploader: data.author_name,
-      uploadDate: ''
+      title: info.title,
+      duration: formatDuration(info.duration),
+      thumbnail: info.thumbnail,
+      description: info.description || '',
+      uploader: info.uploader || '',
+      uploadDate: info.upload_date || ''
     };
   } catch (error) {
     const msg = error.message || '';
-    if (msg.includes('private') || msg.includes('unavailable') || msg.includes('region')) {
-      throw new Error(error.message);
+    if (msg.includes('private')) {
+      throw new Error('Video is private');
     }
-    if (msg === 'Timeout') {
-      throw new Error('Connection timeout. Try again.');
+    if (msg.includes('unavailable')) {
+      throw new Error('Video is unavailable');
     }
-    throw new Error('Could not fetch video info. Try again.');
+    if (msg.includes('region')) {
+      throw new Error('Video is region-locked');
+    }
+    if (msg.includes('429') || msg.includes('Too Many Requests')) {
+      throw new Error('YouTube rate limited. Try again later.');
+    }
+    throw new Error('Could not fetch video info. Check yt-dlp is installed.');
   }
 }
 
@@ -105,12 +90,40 @@ export async function getPlaylistInfo(url) {
       };
     }
 
+    const output = execSync(`python -m yt_dlp --flat-playlist --dump-json "${url}"`, {
+      encoding: 'utf-8',
+      timeout: 60000,
+      maxBuffer: 20 * 1024 * 1024
+    });
+    
+    const videos = output.split('\n').filter(line => line.trim()).map(line => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+    
+    const playlistTitle = videos[0]?.playlist_title || 'Playlist';
+    
     return {
-      title: 'Playlist ' + playlistId.slice(0, 8),
-      videoCount: 1,
-      videos: []
+      title: playlistTitle,
+      videoCount: videos.length,
+      videos: videos.slice(0, 20).map(v => ({
+        title: v.title,
+        id: v.id,
+        duration: formatDuration(v.duration),
+        thumbnail: v.thumbnail
+      }))
     };
   } catch (error) {
+    const msg = error.message || '';
+    if (msg.includes('private')) {
+      throw new Error('Playlist contains private videos');
+    }
+    if (msg.includes('unavailable')) {
+      throw new Error('Playlist contains unavailable videos');
+    }
     throw new Error('Could not fetch playlist info.');
   }
 }
