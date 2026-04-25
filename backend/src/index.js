@@ -86,6 +86,8 @@ app.post('/api/download-video', async (req, res) => {
     if (!url || !format || !quality) {
       return res.status(400).json({ error: 'URL, format, and quality are required' });
     }
+    
+    console.log('Download request:', { url, format, quality });
 
     const id = uuidv4();
     const download = {
@@ -101,9 +103,9 @@ app.post('/api/download-video', async (req, res) => {
     downloads.set(id, download);
     addToQueue(download);
     
-    res.json({ id, message: 'Download queued' });
+    res.json({ id, message: 'Download started' });
     
-    processDownload(id, url, format, quality);
+    await processDownload(id, url, format, quality);
   } catch (error) {
     console.error('Download error:', error.message);
     res.status(400).json({ error: error.message });
@@ -151,58 +153,96 @@ async function processDownload(id, url, format, quality) {
   try {
     const { spawn } = await import('child_process');
     
-const formatArgs = getFormatArgs(format, quality);
-    const args = [
-      '-m', 'yt_dlp',
-      '--quiet',
-      '--progress',
-      '--no-playlist',
-      '--no-warn',
-      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      '--extractor-args', 'youtube:player_client=web',
-      '-o', `${paths.downloads}/%(title)s.%(ext)s`,
-      '-f', formatArgs,
-      url
-    ];
+    const outputPath = `${paths.downloads}`;
+    
+    let formatArgs;
+    let finalArgs;
     
     if (format === 'MP3') {
-      args.push('--extract-audio', '--audio-format', 'mp3');
+      finalArgs = [
+        '-m', 'yt_dlp',
+        '--extract-audio',
+        '--audio-format', 'mp3',
+        '--audio-quality', '0',
+        '-o', `${outputPath}/%(title)s.%(ext)s`,
+        url
+      ];
+    } else {
+      if (quality === 'Best') {
+        formatArgs = 'bestvideo+bestaudio/best';
+      } else if (quality === '1080p') {
+        formatArgs = 'bestvideo[height<=1080]+bestaudio/best';
+      } else if (quality === '720p') {
+        formatArgs = 'bestvideo[height<=720]+bestaudio/best';
+      } else if (quality === '360p') {
+        formatArgs = 'bestvideo[height<=360]+bestaudio/best';
+      } else {
+        formatArgs = 'best';
+      }
+      
+      finalArgs = [
+        '-m', 'yt_dlp',
+        '-f', formatArgs,
+        '-o', `${outputPath}/%(title)s.%(ext)s`,
+        url
+      ];
     }
     
-    const proc = spawn('python', args, { cwd: paths.root });
+    console.log('Starting download with args:', finalArgs.join(' '));
+    
+    const proc = spawn('python', finalArgs, { 
+      cwd: paths.root,
+      shell: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    
     download.process = proc;
     
+    let buffer = '';
+    
     proc.stdout.on('data', (data) => {
-      const output = data.toString();
-      const progressMatch = output.match(/(\d+\.?\d*)%/);
-      if (progressMatch) {
-        const progress = parseFloat(progressMatch[1]);
-        download.progress = progress;
-        updateProgress(id, { progress, status: 'downloading' });
+      buffer += data.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (line.includes('%')) {
+          const progressMatch = line.match(/(\d+\.?\d*)%/);
+          if (progressMatch) {
+            const progress = parseFloat(progressMatch[1]);
+            download.progress = progress;
+            updateProgress(id, { progress, status: 'downloading' });
+            console.log('Progress:', progress + '%');
+          }
+        }
       }
     });
     
     proc.stderr.on('data', (data) => {
-      console.error('python stderr:', data.toString());
+      const err = data.toString();
+      console.error('yt-dlp:', err);
     });
     
     proc.on('close', (code) => {
+      console.log('Download finished with code:', code);
       if (code === 0) {
         download.status = 'completed';
         download.progress = 100;
         updateProgress(id, { status: 'completed', progress: 100 });
       } else if (download.status !== 'cancelled') {
         download.status = 'failed';
-        updateProgress(id, { status: 'failed', error: 'Download failed' });
+        updateProgress(id, { status: 'failed', error: 'Download failed with code: ' + code });
       }
     });
     
     proc.on('error', (err) => {
+      console.error('Process error:', err);
       download.status = 'failed';
       updateProgress(id, { status: 'failed', error: err.message });
     });
     
   } catch (error) {
+    console.error('Download error:', error);
     download.status = 'failed';
     updateProgress(id, { status: 'failed', error: error.message });
   }
