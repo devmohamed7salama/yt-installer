@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Moon, Sun, FolderOpen, Loader2 } from 'lucide-react';
+import { Download, Moon, Sun, FolderOpen, Loader2, Music, Video } from 'lucide-react';
 import { useDarkMode } from './hooks/useDarkMode';
 import { analyzeUrl, downloadVideo, downloadPlaylist, getQueue, cancelDownload } from './services/api';
 import { useProgress } from './hooks/useProgress';
@@ -11,13 +11,29 @@ function App() {
   const [quality, setQuality] = useState('Best');
   const [analyzedData, setAnalyzedData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [downloads, setDownloads] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [downloadedFiles, setDownloadedFiles] = useState([]);
   const [showFiles, setShowFiles] = useState(false);
   
   const { progress } = useProgress(activeId);
+  
+  useEffect(() => {
+    if (activeId && progress.status !== 'idle') {
+      setDownloads(prev => prev.map(d => 
+        d.id === activeId ? { ...d, progress: progress.progress, status: progress.status } : d
+      ));
+      if (progress.status === 'completed') {
+        setActiveId(null);
+        setDownloading(false);
+      } else if (progress.status === 'failed') {
+        setActiveId(null);
+        setDownloading(false);
+        setError('Download failed. Try again.');
+      }
+    }
+  }, [progress]);
   
   useEffect(() => {
     loadQueue();
@@ -77,23 +93,21 @@ function App() {
 
   const handleDownload = async () => {
     if (!url) return;
-    setLoading(true);
+    setDownloading(true);
     setError(null);
     
     try {
+      let result;
       if (analyzedData?.type === 'playlist') {
-        const result = await downloadPlaylist(url, format, quality);
-        setDownloads(prev => [...prev, { id: result.id, url, format, quality, progress: 0, status: 'queued' }]);
-        setActiveId(result.id);
+        result = await downloadPlaylist(url, format, quality);
       } else {
-        const result = await downloadVideo(url, format, quality);
-        setDownloads(prev => [...prev, { id: result.id, url, format, quality, progress: 0, status: 'queued' }]);
-        setActiveId(result.id);
+        result = await downloadVideo(url, format, quality);
       }
+      setDownloads([{ id: result.id, url, format, quality, progress: 0, status: 'downloading' }]);
+      setActiveId(result.id);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
+      setDownloading(false);
     }
   };
 
@@ -179,12 +193,14 @@ function App() {
                   value={format}
                   onChange={(e) => {
                     setFormat(e.target.value);
-                    if (e.target.value === 'MP3') setQuality('Best');
+                    if (e.target.value === 'MP3') {
+                      setQuality('Best');
+                    }
                   }}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm"
                 >
-                  <option value="MP4">MP4</option>
-                  <option value="MP3">MP3</option>
+                  <option value="MP4">MP4 (Video)</option>
+                  <option value="MP3">MP3 (Audio)</option>
                   <option value="WebM">WebM</option>
                 </select>
               </div>
@@ -206,11 +222,20 @@ function App() {
             
             <button
               onClick={handleDownload}
-              disabled={loading}
+              disabled={loading || downloading}
               className="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {loading ? 'Processing...' : `Download ${isPlaylist ? 'Playlist' : 'Video'}`}
+              {downloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  {format === 'MP3' ? <Music className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                  {`Download ${isPlaylist ? 'Playlist' : 'Video'}`}
+                </>
+              )}
             </button>
           </div>
         )}
