@@ -1,5 +1,15 @@
 import { spawn, execSync } from 'child_process';
 
+const YT_DLP_OPTS = [
+  '--no-playlist',
+  '--no-warn',
+  '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  '--extractor-args', 'youtube:player_client=web,default_client=web',
+  '--extractor-args', 'youtube:player_skip=webpage,configs',
+  '--geo-bypass',
+  '--no-check-certificates'
+];
+
 export async function analyzeUrl(url) {
   if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
     throw new Error('Invalid YouTube URL');
@@ -16,39 +26,50 @@ export async function analyzeUrl(url) {
 
 export async function getVideoInfo(url) {
   try {
-    const output = execSync(`python3 -m yt_dlp --dump-json --no-playlist "${url}"`, {
+    const args = [...YT_DLP_OPTS, '--dump-json', url];
+    const output = execSync(`python3 -m yt_dlp ${args.join(' ')}`, {
       encoding: 'utf-8',
-      timeout: 30000
+      timeout: 60000,
+      maxBuffer: 10 * 1024 * 1024
     });
     
     const info = JSON.parse(output);
     return {
       title: info.title,
-      duration: info.duration,
+      duration: formatDuration(info.duration),
       thumbnail: info.thumbnail,
       description: info.description,
       uploader: info.uploader,
       uploadDate: info.upload_date
     };
   } catch (error) {
-    if (error.message.includes('private')) {
+    const msg = error.message || '';
+    if (msg.includes('private')) {
       throw new Error('Video is private');
     }
-    if (error.message.includes('unavailable')) {
+    if (msg.includes('unavailable')) {
       throw new Error('Video is unavailable');
     }
-    if (error.message.includes('region')) {
+    if (msg.includes('region')) {
       throw new Error('Video is region-locked');
     }
-    throw error;
+    if (msg.includes('429') || msg.includes('Too Many Requests')) {
+      throw new Error('YouTube rate limited. Please try again later.');
+    }
+    if (msg.includes('Sign in to confirm')) {
+      throw new Error('YouTube is blocking. Please try a different video.');
+    }
+    throw new Error('Could not fetch video info. Try again.');
   }
 }
 
 export async function getPlaylistInfo(url) {
   try {
-    const output = execSync(`python3 -m yt_dlp --flat-playlist --dump-json "${url}"`, {
+    const args = [...YT_DLP_OPTS, '--flat-playlist', '--dump-json', url];
+    const output = execSync(`python3 -m yt_dlp ${args.join(' ')}`, {
       encoding: 'utf-8',
-      timeout: 30000
+      timeout: 60000,
+      maxBuffer: 20 * 1024 * 1024
     });
     
     const videos = output.split('\n').filter(line => line.trim()).map(line => {
@@ -72,12 +93,20 @@ export async function getPlaylistInfo(url) {
       }))
     };
   } catch (error) {
-    if (error.message.includes('private')) {
+    const msg = error.message || '';
+    if (msg.includes('private')) {
       throw new Error('Playlist contains private videos');
     }
-    if (error.message.includes('unavailable')) {
+    if (msg.includes('unavailable')) {
       throw new Error('Playlist contains unavailable videos');
     }
-    throw error;
+    throw new Error('Could not fetch playlist info.');
   }
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return 'Unknown';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
