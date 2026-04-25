@@ -71,7 +71,7 @@ export async function getVideoInfo(url) {
     
     return {
       title: data.title,
-      duration: '0:00',
+      duration: 'N/A',
       thumbnail: data.thumbnail_url,
       description: '',
       uploader: data.author_name,
